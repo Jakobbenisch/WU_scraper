@@ -5,8 +5,8 @@ You need to register and create an API key at https://www.wunderground.com
 
 Example on how to use the function:
 
- `start="2024-01-01"  
-end="2024-03-01"  
+ `start="2024-01-01"   `
+end="2024-03-01"   `
 output_path="your path"  
 api_key <- "your API key"  
 stations=c("IDRESD330","IDRESD25") `  
