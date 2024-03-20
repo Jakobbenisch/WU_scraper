@@ -1,0 +1,96 @@
+library(httr)
+library(xts)
+
+
+weather_underground_data <- function(start,end,station,api_key,export_txt=T,output_path=c(),verbose=T) {
+  
+  
+  #build timeseries:
+  dates=seq.Date(from = as.Date(start),to=as.Date(end),by = "day")
+  
+  result=list()
+  
+  for (i in 1:length(dates)){
+    # Construct the API URL
+    base_url <- "https://api.weather.com/v2/pws/history/hourly"
+    station_id <- station
+    format <- "json"
+    units <- "m"
+    date <- format(dates[i], "%Y%m%d")
+    url <- paste0(base_url, "?stationId=", station_id, "&format=", format, "&units=", units,"&date=",date,"&numericPrecision=decimal","&apiKey=", api_key)
+    
+    # Make the API request
+    response <- GET(url)
+    
+    # Get the status code directly from the response
+    status_code <- status_code(response)
+    
+    # Check if the request was successful (status code 200)
+    if (status_code == 200) {
+      # Parse the JSON response
+      data <- content(response, "parsed")
+        # Now 'data' contains the API response data, and you can proceed with your analysis
+      #print(data)
+    } else {
+      # Print an error message if the request was not successful
+      cat("Error:", status_code, "\n")
+    }
+    
+    if (length(data[[1]]) == 0) {
+      print(paste0("No data at ",dates[i]," -> List is empty. Skipping this iteration."))
+      next  # Skip to the next iteration
+    }
+    
+    station_id=paste0(data[[1]][[1]]$stationID,",tz=UTC")
+    location=paste0(",lat",data[[1]][[1]]$lat,",lon",data[[1]][[1]]$lon)
+    # Initialize an empty list to store data frames
+    result_list <- list()
+    
+    # Loop through observations and add data frames to the list
+    for(hours in 1:length(data[[1]])) {
+      
+      for(nulls in 1:length(data[[1]][[hours]])){
+        if(is.null(data[[1]][[hours]][[nulls]])){data[[1]][[hours]][[nulls]]<-NA}
+      }#the original "NULL" value screws data.frame
+      
+      for(nulls_obs in 1:length(data[[1]][[hours]][[nulls]])){
+        if(is.null(data[[1]][[hours]][[nulls]][[nulls_obs]])){data[[1]][[hours]][[nulls]][[nulls_obs]]<-NA}#the original in the "observation - sub level" "NULL" value screws data.frame
+      }
+      observation_data <- data.frame(
+        timestamp = as.POSIXct(data[[1]][[hours]]$obsTimeUtc, format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"), #polishing to get similar and round timesteps coulde be done here. 
+        quality_check = data[[1]][[hours]]$qcStatus,
+        #StatusQuality control indicator:
+        #-1: No quality control check performed
+        #0: This observation was marked as possibly incorrect by our quality control algorithm
+        solar_radiation = data[[1]][[hours]]$solarRadiationHigh,
+        humidity_avg = data[[1]][[hours]]$humidityAvg,
+        temperature_avg = data[[1]][[hours]]$metric$tempAvg,
+        wind_avg = data[[1]][[hours]]$metric$windspeedAvg,
+        wind_gust_avg = data[[1]][[hours]]$metric$windgustAvg,
+        rain_total = data[[1]][[hours]]$metric$precipTotal,   
+        #Accumulated Rain for the day from midnight to present  in defined unit of measure
+        rain = data[[1]][[hours]]$metric$precipRate
+        #Rate of precipitation - instantaneous precipitation rate. How much rain would fall if the precipitation intensity did not change for one hour
+      )
+      
+      result_list[[length(result_list) + 1]] <- observation_data
+    }
+    if(verbose==T){
+    print(dates[i])
+      }
+    
+    result[[i]] <- do.call(rbind, result_list)
+  }
+  
+  final_data=do.call(rbind,result)
+  
+  
+  if(export_txt==T){
+    
+    
+    write.table(final_data,paste0(output_path,station_id,location,".txt"),col.names = T, sep = ",", 
+                quote = FALSE, na = "")
+  }
+  return
+}
+  
