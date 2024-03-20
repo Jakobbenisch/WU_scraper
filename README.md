@@ -13,8 +13,8 @@ Example on how to use the function:
 ###you need to use WU map to find stations ID here: https://www.wunderground.com/dashboard/pws/IDRESD322
 
  `for (station in 1:length(stations)){
-  weather_underground_data(start,end,station=stations[station],api_key,export_txt=T,output_path=output_path,verbose=T)
-}
+   weather_underground_data(start,end,station=stations[station],api_key,export_txt=T,output_path=output_path,verbose=T)  
+   }  
  `
   
 
