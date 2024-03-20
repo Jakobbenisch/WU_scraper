@@ -13,7 +13,7 @@ stations=c("IDRESD330","IDRESD25")
 ###you need to use WU map to find stations ID here: https://www.wunderground.com/dashboard/pws/IDRESD322
 
 for (station in 1:length(stations)){
-  scrape_weather_data_weather_underground(start,end,station=stations[station],api_key,export_txt=T,output_path=output_path,verbose=T)
+  weather_underground_data(start,end,station=stations[station],api_key,export_txt=T,output_path=output_path,verbose=T)
 }
   
 
