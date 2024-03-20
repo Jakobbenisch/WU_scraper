@@ -3,8 +3,6 @@ R function to download data from weatherunderground
 
 You need to register and create an API key at https://www.wunderground.com
 
-find stations here: https://www.wunderground.com/dashboard/pws/IDRESD322
-
 Example on how to use the function:
 
 start="2024-01-01"
